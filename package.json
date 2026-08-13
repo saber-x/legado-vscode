@@ -13,16 +13,16 @@
   ],
   "publisher": "sunrishe",
   "license": "GPL-3.0",
-  "version": "2.9.5",
+  "version": "2.9.6",
   "icon": "public/ic_launcher.png",
-  "qna": "https://github.com/sunrishe/legado-vscode/issues",
+  "qna": "https://github.com/saber-x/legado-vscode/issues",
   "bugs": {
-    "url": "https://github.com/sunrishe/legado-vscode/issues",
+    "url": "https://github.com/saber-x/legado-vscode/issues",
     "email": "i@sunrishe.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/sunrishe/legado-vscode.git"
+    "url": "https://github.com/saber-x/legado-vscode.git"
   },
   "engines": {
     "vscode": "^1.45.0"
@@ -31,8 +31,14 @@
     "Other"
   ],
   "activationEvents": [
+    "onStartupFinished",
     "onCommand:legado-vscode.openLegado",
-    "onCommand:legado-vscode.closeLegado"
+    "onCommand:legado-vscode.closeLegado",
+    "onCommand:legado-vscode.statusBarNext",
+    "onCommand:legado-vscode.statusBarPrevious",
+    "onCommand:legado-vscode.toggleStatusBar",
+    "onCommand:legado-vscode.statusBarBossKey",
+    "onCommand:legado-vscode.statusBarClearFocus"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -46,6 +52,93 @@
         "command": "legado-vscode.closeLegado",
         "title": "关闭阅读APP书架",
         "category": "阅读APP Legado"
+      },
+      {
+        "command": "legado-vscode.statusBarNext",
+        "title": "状态栏显示下一段",
+        "category": "阅读APP Legado"
+      },
+      {
+        "command": "legado-vscode.statusBarPrevious",
+        "title": "状态栏显示上一段",
+        "category": "阅读APP Legado"
+      },
+      {
+        "command": "legado-vscode.toggleStatusBar",
+        "title": "显示或隐藏状态栏阅读",
+        "category": "阅读APP Legado"
+      },
+      {
+        "command": "legado-vscode.statusBarBossKey",
+        "title": "快速隐藏或显示状态栏正文",
+        "category": "阅读APP Legado"
+      },
+      {
+        "command": "legado-vscode.statusBarClearFocus",
+        "title": "退出状态栏阅读",
+        "category": "阅读APP Legado"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "legado-vscode.statusBarPrevious",
+        "key": "left",
+        "when": "statusBarFocused && legado-vscode.statusBar.hasBook"
+      },
+      {
+        "command": "legado-vscode.statusBarPrevious",
+        "key": "up",
+        "when": "statusBarFocused && legado-vscode.statusBar.hasBook"
+      },
+      {
+        "command": "legado-vscode.statusBarPrevious",
+        "key": "a",
+        "when": "statusBarFocused && legado-vscode.statusBar.hasBook"
+      },
+      {
+        "command": "legado-vscode.statusBarPrevious",
+        "key": "w",
+        "when": "statusBarFocused && legado-vscode.statusBar.hasBook"
+      },
+      {
+        "command": "legado-vscode.statusBarPrevious",
+        "key": "pageup",
+        "when": "statusBarFocused && legado-vscode.statusBar.hasBook"
+      },
+      {
+        "command": "legado-vscode.statusBarNext",
+        "key": "right",
+        "when": "statusBarFocused && legado-vscode.statusBar.hasBook"
+      },
+      {
+        "command": "legado-vscode.statusBarNext",
+        "key": "down",
+        "when": "statusBarFocused && legado-vscode.statusBar.hasBook"
+      },
+      {
+        "command": "legado-vscode.statusBarNext",
+        "key": "d",
+        "when": "statusBarFocused && legado-vscode.statusBar.hasBook"
+      },
+      {
+        "command": "legado-vscode.statusBarNext",
+        "key": "s",
+        "when": "statusBarFocused && legado-vscode.statusBar.hasBook"
+      },
+      {
+        "command": "legado-vscode.statusBarNext",
+        "key": "pagedown",
+        "when": "statusBarFocused && legado-vscode.statusBar.hasBook"
+      },
+      {
+        "command": "legado-vscode.statusBarBossKey",
+        "key": "space",
+        "when": "statusBarFocused && legado-vscode.statusBar.hasBook"
+      },
+      {
+        "command": "legado-vscode.statusBarClearFocus",
+        "key": "escape",
+        "when": "statusBarFocused && legado-vscode.statusBar.hasBook"
       }
     ],
     "configuration": {
@@ -61,6 +154,37 @@
           "type": "string",
           "default": "http://127.0.0.1:1122",
           "description": "阅读APP的WEB服务访问地址"
+        },
+        "legado-vscode.statusBar.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "打开章节后，在VS Code底部状态栏显示小说正文"
+        },
+        "legado-vscode.statusBar.maxLength": {
+          "type": "integer",
+          "default": 60,
+          "minimum": 20,
+          "maximum": 200,
+          "description": "状态栏每段最多显示的字符数"
+        },
+        "legado-vscode.statusBar.mouseMoveDelay": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 0,
+          "maximum": 60,
+          "description": "显示正文或翻页后，延迟多少秒开始检测鼠标移动"
+        },
+        "legado-vscode.statusBar.autoHideSeconds": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 0,
+          "maximum": 600,
+          "description": "连续无操作多少秒后自动隐藏正文，设置为0时不自动隐藏"
+        },
+        "legado-vscode.statusBar.wheelEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "状态栏正文显示时允许使用滚轮翻页"
         }
       }
     }
@@ -70,10 +194,11 @@
     "web"
   ],
   "scripts": {
+    "native:build": "clang native/mouse-monitor.m -framework AppKit -arch arm64 -arch x86_64 -Os -o public/mouse-monitor",
     "web:build": "yarn --cwd web run build",
     "web:dev": "yarn --cwd web run dev",
     "web:watch": "yarn --cwd web run watch",
-    "build": "yarn run web:build && vsce package",
+    "build": "yarn run native:build && yarn run web:build && vsce package",
     "vscode:prepublish": "yarn run package",
     "compile": "webpack",
     "watch": "webpack --watch",

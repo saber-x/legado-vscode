@@ -1,14 +1,24 @@
 import * as vscode from "vscode";
 import { getUri } from "./utilities/getUri";
+import { StatusBarBook, StatusBarChapter, StatusBarReader } from "./StatusBarReader";
 
 export class WebAppPanel {
   public static currentPanel: WebAppPanel | undefined;
+  private static _statusBarReader: StatusBarReader | undefined;
 
   public static readonly viewType = "legado-vscode:panel";
 
   private readonly _panel: vscode.WebviewPanel;
   private readonly _extensionUri: vscode.Uri;
   private _disposables: vscode.Disposable[] = [];
+
+  public static setStatusBarReader(reader: StatusBarReader) {
+    WebAppPanel._statusBarReader = reader;
+  }
+
+  public static postMessage(message: unknown) {
+    return WebAppPanel.currentPanel?._panel.webview.postMessage(message);
+  }
 
   private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
     this._panel = panel;
@@ -117,6 +127,18 @@ export class WebAppPanel {
       case "close":
         WebAppPanel.kill();
         return;
+      case "setStatusBarChapter":
+        WebAppPanel._statusBarReader?.setChapter(message.value as StatusBarChapter);
+        return;
+      case "setStatusBarBook":
+        WebAppPanel._statusBarReader?.setBook(message.value as StatusBarBook);
+        return;
+      case "hideStatusBarContent":
+        WebAppPanel._statusBarReader?.hideContent();
+        return;
+      case "statusBarLoadFailed":
+        WebAppPanel._statusBarReader?.setLoadFailed();
+        return;
     }
   }
 
@@ -147,6 +169,17 @@ export class WebAppPanel {
     let panelTitle: string =
       vscode.workspace.getConfiguration().get("legado-vscode.panelTitle") || "阅读";
     panelTitle = panelTitle.replace(/^\s+|\s+$/g, "");
+    const statusBarConfiguration = vscode.workspace.getConfiguration(
+      "legado-vscode.statusBar"
+    );
+    const statusBarEnabled = statusBarConfiguration.get<boolean>("enabled", true);
+    const statusBarMaxLength = statusBarConfiguration.get<number>("maxLength", 60);
+    const statusBarMouseMoveDelay = statusBarConfiguration.get<number>("mouseMoveDelay", 3);
+    const statusBarAutoHideSeconds = statusBarConfiguration.get<number>(
+      "autoHideSeconds",
+      10
+    );
+    const statusBarWheelEnabled = statusBarConfiguration.get<boolean>("wheelEnabled", true);
     const colorMode = this._getColorMode();
 
     return /*html*/ `
@@ -159,6 +192,21 @@ export class WebAppPanel {
           <script type="text/javascript">
             localStorage.setItem("legadoWebServeUrl", ${JSON.stringify(webServeUrl)});
             localStorage.setItem("legadoPanelTitle", ${JSON.stringify(panelTitle)});
+            localStorage.setItem("legadoStatusBarEnabled", ${JSON.stringify(
+              statusBarEnabled
+            )});
+            localStorage.setItem("legadoStatusBarMaxLength", ${JSON.stringify(
+              statusBarMaxLength
+            )});
+            localStorage.setItem("legadoStatusBarMouseMoveDelay", ${JSON.stringify(
+              statusBarMouseMoveDelay
+            )});
+            localStorage.setItem("legadoStatusBarAutoHideSeconds", ${JSON.stringify(
+              statusBarAutoHideSeconds
+            )});
+            localStorage.setItem("legadoStatusBarWheelEnabled", ${JSON.stringify(
+              statusBarWheelEnabled
+            )});
             localStorage.setItem("legadoColorMode", ${JSON.stringify(colorMode)});
           </script>
           <script type="module" crossorigin src="${baseUri}/assets/index.js"></script>

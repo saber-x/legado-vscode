@@ -2,16 +2,16 @@
 
 [![Visual Studio Marketplace Version](https://badgen.net/vs-marketplace/v/sunrishe.legado-vscode)](https://marketplace.visualstudio.com/items?itemName=sunrishe.legado-vscode)
 [![Visual Studio Marketplace Downloads](https://badgen.net/vs-marketplace/d/sunrishe.legado-vscode)](https://marketplace.visualstudio.com/items?itemName=sunrishe.legado-vscode)
-[![stars](https://badgen.net/github/stars/sunrishe/legado-vscode)](https://github.com/sunrishe/legado-vscode.git)
-[![issues](https://badgen.net/github/open-issues/sunrishe/legado-vscode)](https://github.com/sunrishe/legado-vscode/issues)
-[![PRs](https://badgen.net/github/open-prs/sunrishe/legado-vscode)](https://github.com/sunrishe/legado-vscode/pulls)
-[![GitHub License](https://badgen.net/github/license/sunrishe/legado-vscode)](https://github.com/sunrishe/legado-vscode.git)
+[![stars](https://badgen.net/github/stars/saber-x/legado-vscode)](https://github.com/saber-x/legado-vscode)
+[![issues](https://badgen.net/github/open-issues/saber-x/legado-vscode)](https://github.com/saber-x/legado-vscode/issues)
+[![PRs](https://badgen.net/github/open-prs/saber-x/legado-vscode)](https://github.com/saber-x/legado-vscode/pulls)
+[![GitHub License](https://badgen.net/github/license/saber-x/legado-vscode)](https://github.com/saber-x/legado-vscode)
 
-📕 [GitHub仓库](https://github.com/sunrishe/legado-vscode.git)
+📕 [GitHub仓库](https://github.com/saber-x/legado-vscode)
 📗 [VS Code插件市场](https://marketplace.visualstudio.com/items?itemName=sunrishe.legado-vscode)
-📘 [更新日志](https://github.com/sunrishe/legado-vscode/blob/master/CHANGELOG.md)
+📘 [更新日志](https://github.com/saber-x/legado-vscode/blob/main/CHANGELOG.md)
 
-📙 插件不断完善，欢迎提交 [Issues](https://github.com/sunrishe/legado-vscode/issues)、[Pull requests](https://github.com/sunrishe/legado-vscode/pulls)
+📙 插件不断完善，欢迎提交 [Issues](https://github.com/saber-x/legado-vscode/issues)、[Pull requests](https://github.com/saber-x/legado-vscode/pulls)
 
 ---
 
@@ -20,6 +20,30 @@
 > 配合[阅读APP](https://github.com/LegadoTeam/legado.git)用来学习的阅读插件，并在阅读APP的WEB服务基础上，书架页面增加了暗黑模式，章节阅读页面增加 <kbd>W</kbd> <kbd>S</kbd> <kbd>A</kbd> <kbd>D</kbd> 进行翻页控制。
 >
 > 😎悄悄地告诉你，阅读界面打开`无限加载`食用更佳哦~
+
+### 状态栏阅读
+
+VS Code 启动后，底部状态栏会立即显示书本图标，并从阅读 APP 书架自动加载最近阅读的书，无需先打开阅读标签页。鼠标单击图标后显示正文；如果书架、目录或章节获取失败，图标仍会保留，单击后执行 `阅读APP Legado: 打开阅读APP书架`。在 macOS 上，显示正文或翻页 3 秒后开始检测鼠标，之后移动鼠标会立即隐藏正文并恢复为书本图标。正文显示时，滚轮向上显示上一段，向下显示下一段。静止鼠标时，连续 10 秒没有翻页或单击操作也会自动隐藏。关闭阅读标签页后仍可继续翻页和切换章节。
+
+macOS 首次使用滚轮翻页时，需要按扩展提示开启“系统设置 → 隐私与安全性 → 输入监控”中的 Visual Studio Code 权限，然后完全退出并重新打开 VS Code。
+
+书架页面的“基本设定”中可配置状态栏开关、每段最大字符数、鼠标移动监听延迟、无操作自动隐藏时间和滚轮翻页开关，保存后立即生效。
+
+状态栏获得焦点并显示正文时，支持以下按键：
+
+- <kbd>W</kbd>、<kbd>A</kbd>、<kbd>↑</kbd>、<kbd>←</kbd>、<kbd>PgUp</kbd>：上一段
+- <kbd>S</kbd>、<kbd>D</kbd>、<kbd>↓</kbd>、<kbd>→</kbd>、<kbd>PgDn</kbd>：下一段
+- <kbd>空格</kbd>：快速隐藏或显示正文
+- <kbd>Esc</kbd>：隐藏正文并退出状态栏焦点
+
+也可以在命令面板执行以下命令：
+
+- `阅读APP Legado: 状态栏显示上一段`
+- `阅读APP Legado: 状态栏显示下一段`
+- `阅读APP Legado: 显示或隐藏状态栏阅读`
+- `阅读APP Legado: 快速隐藏或显示状态栏正文`
+
+设置项 `legado-vscode.statusBar.maxLength` 可调整每段最多显示的字符数，默认是 60。
 
 ### 书架页面
 

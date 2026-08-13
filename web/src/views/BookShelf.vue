@@ -78,7 +78,7 @@
       </div>
       <div class="bottom-icons">
         <a
-          href="https://github.com/sunrishe/legado-vscode"
+          href="https://github.com/saber-x/legado-vscode"
           target="_blank"
         >
           <div class="bottom-icon">
@@ -112,7 +112,7 @@ import { showMessage } from "@/hooks/message";
 import { toggleColorMode } from "@/hooks/theme";
 import { isDarkTheme } from "@/config/themeConfig";
 import { defineComponent, h, reactive } from "vue";
-import { ElInput } from "element-plus";
+import { ElInput, ElSwitch } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
 import API from "@api";
 import WEB from "@/api/web";
@@ -190,11 +190,19 @@ const openSettings = () => {
   const oldWebServeUrl = WEB.getLegadoWebServeUrl();
   const form = reactive({
     panelTitle: WEB.getPanelTitle(),
-    webServeUrl: oldWebServeUrl
+    webServeUrl: oldWebServeUrl,
+    statusBarEnabled: WEB.getStatusBarEnabled(),
+    statusBarMaxLength: WEB.getStatusBarMaxLength(),
+    mouseMoveDelay: WEB.getStatusBarMouseMoveDelay(),
+    autoHideSeconds: WEB.getStatusBarAutoHideSeconds(),
+    wheelEnabled: WEB.getStatusBarWheelEnabled()
   });
   const errors = reactive({
     panelTitle: "",
-    webServeUrl: ""
+    webServeUrl: "",
+    statusBarMaxLength: "",
+    mouseMoveDelay: "",
+    autoHideSeconds: ""
   });
   const validatePanelTitle = () => {
     errors.panelTitle = form.panelTitle.trim() ? "" : "标题不能为空";
@@ -203,6 +211,24 @@ const openSettings = () => {
   const validateWebServeUrl = () => {
     errors.webServeUrl = isValidWebServeUrl(form.webServeUrl.trim()) ? "" : "无效的地址";
     return !errors.webServeUrl;
+  };
+  const validateStatusBarMaxLength = () => {
+    const value = Number(form.statusBarMaxLength);
+    errors.statusBarMaxLength =
+      Number.isInteger(value) && value >= 20 && value <= 200 ? "" : "请输入 20 到 200 之间的整数";
+    return !errors.statusBarMaxLength;
+  };
+  const validateMouseMoveDelay = () => {
+    const value = Number(form.mouseMoveDelay);
+    errors.mouseMoveDelay =
+      Number.isInteger(value) && value >= 0 && value <= 60 ? "" : "请输入 0 到 60 之间的整数";
+    return !errors.mouseMoveDelay;
+  };
+  const validateAutoHideSeconds = () => {
+    const value = Number(form.autoHideSeconds);
+    errors.autoHideSeconds =
+      Number.isInteger(value) && value >= 0 && value <= 600 ? "" : "请输入 0 到 600 之间的整数";
+    return !errors.autoHideSeconds;
   };
   const errorStyle = {
     color: "var(--el-color-danger)",
@@ -229,7 +255,10 @@ const openSettings = () => {
               display: "flex",
               flexDirection: "column",
               gap: "14px",
-              width: "100%"
+              width: "100%",
+              maxHeight: "calc(100vh - 220px)",
+              overflowY: "auto",
+              paddingRight: "4px"
             }
           },
           [
@@ -262,6 +291,82 @@ const openSettings = () => {
                 style: inputStyle
               }),
               errors.webServeUrl ? h("div", { style: errorStyle }, errors.webServeUrl) : null
+            ]),
+            h("div", null, [
+              h("label", { style: labelStyle }, "启用状态栏阅读"),
+              h(ElSwitch, {
+                modelValue: form.statusBarEnabled,
+                "onUpdate:modelValue": (value) => {
+                  form.statusBarEnabled = value;
+                }
+              })
+            ]),
+            h("div", null, [
+              h("label", { style: labelStyle }, "状态栏每段最大字符数（20–200）"),
+              h(ElInput, {
+                modelValue: form.statusBarMaxLength,
+                "onUpdate:modelValue": (value) => {
+                  form.statusBarMaxLength = value;
+                  validateStatusBarMaxLength();
+                },
+                type: "number",
+                min: 20,
+                max: 200,
+                step: 1,
+                validateEvent: false,
+                placeholder: "请输入 20 到 200 之间的整数",
+                style: inputStyle
+              }),
+              errors.statusBarMaxLength
+                ? h("div", { style: errorStyle }, errors.statusBarMaxLength)
+                : null
+            ]),
+            h("div", null, [
+              h("label", { style: labelStyle }, "鼠标移动监听延迟（秒，0–60）"),
+              h(ElInput, {
+                modelValue: form.mouseMoveDelay,
+                "onUpdate:modelValue": (value) => {
+                  form.mouseMoveDelay = value;
+                  validateMouseMoveDelay();
+                },
+                type: "number",
+                min: 0,
+                max: 60,
+                step: 1,
+                validateEvent: false,
+                placeholder: "0 表示立即监听",
+                style: inputStyle
+              }),
+              errors.mouseMoveDelay ? h("div", { style: errorStyle }, errors.mouseMoveDelay) : null
+            ]),
+            h("div", null, [
+              h("label", { style: labelStyle }, "无操作自动隐藏（秒，0–600）"),
+              h(ElInput, {
+                modelValue: form.autoHideSeconds,
+                "onUpdate:modelValue": (value) => {
+                  form.autoHideSeconds = value;
+                  validateAutoHideSeconds();
+                },
+                type: "number",
+                min: 0,
+                max: 600,
+                step: 1,
+                validateEvent: false,
+                placeholder: "0 表示不自动隐藏",
+                style: inputStyle
+              }),
+              errors.autoHideSeconds
+                ? h("div", { style: errorStyle }, errors.autoHideSeconds)
+                : null
+            ]),
+            h("div", null, [
+              h("label", { style: labelStyle }, "启用滚轮翻页"),
+              h(ElSwitch, {
+                modelValue: form.wheelEnabled,
+                "onUpdate:modelValue": (value) => {
+                  form.wheelEnabled = value;
+                }
+              })
             ])
           ]
         );
@@ -285,12 +390,27 @@ const openSettings = () => {
       const url = form.webServeUrl.trim();
       const isTitleValid = validatePanelTitle();
       const isUrlValid = validateWebServeUrl();
+      const isMaxLengthValid = validateStatusBarMaxLength();
+      const isMouseMoveDelayValid = validateMouseMoveDelay();
+      const isAutoHideSecondsValid = validateAutoHideSeconds();
       if (!isTitleValid) {
         showMessage.error("标题不能为空");
         return;
       }
       if (!isUrlValid) {
         showMessage.error("无效的地址");
+        return;
+      }
+      if (!isMaxLengthValid) {
+        showMessage.error("状态栏最大字符数必须是 20 到 200 之间的整数");
+        return;
+      }
+      if (!isMouseMoveDelayValid) {
+        showMessage.error("鼠标移动监听延迟必须是 0 到 60 之间的整数");
+        return;
+      }
+      if (!isAutoHideSecondsValid) {
+        showMessage.error("无操作自动隐藏时间必须是 0 到 600 之间的整数");
         return;
       }
       if (url === oldWebServeUrl) {
@@ -312,30 +432,50 @@ const openSettings = () => {
     }
   }).then(() => ({
     title: form.panelTitle.trim(),
-    webServeUrl: form.webServeUrl.trim()
+    webServeUrl: form.webServeUrl.trim(),
+    statusBarEnabled: form.statusBarEnabled,
+    statusBarMaxLength: Number(form.statusBarMaxLength),
+    mouseMoveDelay: Number(form.mouseMoveDelay),
+    autoHideSeconds: Number(form.autoHideSeconds),
+    wheelEnabled: form.wheelEnabled
   }));
 };
 
 const setIP = () => {
   openSettings()
-    .then(({ title, webServeUrl }) => {
-      const oldWebServeUrl = WEB.getLegadoWebServeUrl();
-      const shouldReload = webServeUrl !== oldWebServeUrl;
-      pageTitle.value = title;
-      WEB.setPanelTitle(title);
-      WEB.setLegadoWebServeUrl(webServeUrl);
-      if (!shouldReload) {
-        showMessage.success("设置已保存");
-        return;
-      }
-      showMessage.success({
-        message: `${webServeUrl} 连接成功，即将重新加载`,
-        duration: 1000,
-        onClose: () => {
-          WEB.reload();
+    .then(
+      ({
+        title,
+        webServeUrl,
+        statusBarEnabled,
+        statusBarMaxLength,
+        mouseMoveDelay,
+        autoHideSeconds,
+        wheelEnabled
+      }) => {
+        const oldWebServeUrl = WEB.getLegadoWebServeUrl();
+        const shouldReload = webServeUrl !== oldWebServeUrl;
+        pageTitle.value = title;
+        WEB.setPanelTitle(title);
+        WEB.setLegadoWebServeUrl(webServeUrl);
+        WEB.setStatusBarEnabled(statusBarEnabled);
+        WEB.setStatusBarMaxLength(statusBarMaxLength);
+        WEB.setStatusBarMouseMoveDelay(mouseMoveDelay);
+        WEB.setStatusBarAutoHideSeconds(autoHideSeconds);
+        WEB.setStatusBarWheelEnabled(wheelEnabled);
+        if (!shouldReload) {
+          showMessage.success("设置已保存");
+          return;
         }
-      });
-    })
+        showMessage.success({
+          message: `${webServeUrl} 连接成功，即将重新加载`,
+          duration: 1000,
+          onClose: () => {
+            WEB.reload();
+          }
+        });
+      }
+    )
     .catch(() => {});
 };
 

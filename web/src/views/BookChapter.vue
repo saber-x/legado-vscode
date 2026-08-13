@@ -295,7 +295,7 @@ const popCataTogger = () => {
 // 获取章节内容
 const chapterData = ref([]);
 const noPoint = ref(true);
-const getContent = (index, reloadChapter = true, chapterPos = 0) => {
+const getContent = (index, reloadChapter = true, chapterPos = 0, statusBarStartAtEnd = false) => {
   if (reloadChapter) {
     //展示进度条
     store.setShowContent(false);
@@ -317,8 +317,18 @@ const getContent = (index, reloadChapter = true, chapterPos = 0) => {
           let data = res.data.data;
           let content = data.split(/\n+/);
           chapterData.value.push({ index, content, title });
+          if (reloadChapter) {
+            WEB.setStatusBarChapter({
+              title,
+              chapterIndex: index,
+              chapterPos,
+              startAtEnd: statusBarStartAtEnd,
+              paragraphs: toStatusBarParagraphs(content)
+            });
+          }
           if (reloadChapter) toChapterPos(chapterPos);
         } else {
+          if (reloadChapter) WEB.statusBarLoadFailed();
           showMessage({ message: res.data.errorMsg, type: "error" });
           let content = [res.data.errorMsg];
           chapterData.value.push({ index, content, title });
@@ -331,6 +341,7 @@ const getContent = (index, reloadChapter = true, chapterPos = 0) => {
         }
       },
       (err) => {
+        if (reloadChapter) WEB.statusBarLoadFailed();
         showMessage({ message: "获取章节内容失败", type: "error" });
         let content = ["获取章节内容失败！"];
         chapterData.value.push({ index, content, title });
@@ -343,6 +354,23 @@ const getContent = (index, reloadChapter = true, chapterPos = 0) => {
       requestLoadMoreCheck();
     });
   });
+};
+
+const toStatusBarParagraphs = (contents) => {
+  const imagePattern = /<img[^>]*src="[^"]*(?:"[^>]+\})?"[^>]*>/g;
+  let currentPos = -1;
+
+  return contents
+    .map((content) => {
+      currentPos += content.replaceAll(imagePattern, " ").length + 1;
+      const element = document.createElement("div");
+      element.innerHTML = content;
+      return {
+        text: element.textContent?.trim() || (/^\s*<img/i.test(content) ? "[图片]" : ""),
+        chapterPos: currentPos
+      };
+    })
+    .filter((paragraph) => paragraph.text);
 };
 
 // 章节进度跳转和计算
@@ -457,6 +485,27 @@ const toPreChapter = () => {
       type: "error"
     });
   }
+};
+
+const handleExtensionMessage = (event) => {
+  const message = event.data;
+  if (message?.command === "statusBarProgress" && message.chapterIndex === chapterIndex.value) {
+    saveReadingBookProgressToBrowser(message.chapterIndex, message.chapterPos);
+    saveReadingBookProgressToApp();
+    toChapterPos(message.chapterPos);
+    return;
+  }
+  if (message?.command !== "statusBarNavigateChapter") return;
+
+  const index = chapterIndex.value + message.direction;
+  if (typeof catalog.value[index] === "undefined") {
+    showMessage({
+      message: message.direction > 0 ? "本章是最后一章" : "本章是第一章",
+      type: "error"
+    });
+    return;
+  }
+  getContent(index, true, 0, message.direction < 0);
 };
 
 // 无限滚动
@@ -631,11 +680,15 @@ onMounted(() => {
   }
   onResize();
   window.addEventListener("resize", onResize);
+  window.addEventListener("message", handleExtensionMessage);
+  window.addEventListener("focus", WEB.hideStatusBarContent);
+  window.addEventListener("pointerdown", WEB.hideStatusBarContent);
   // window.addEventListener("resize", () => reobserveLoading());
   loadingWrapper(
     API.getChapterList(bookUrl).then(
       (res) => {
         if (!res.data.isSuccess) {
+          WEB.statusBarLoadFailed();
           showMessage({ message: res.data.errorMsg, type: "error" });
           setTimeout(toShelf, 500);
           return;
@@ -643,6 +696,12 @@ onMounted(() => {
         let data = res.data.data;
         store.setCatalog(data);
         store.setReadingBook(book);
+        WEB.setStatusBarBook({
+          bookUrl,
+          bookName,
+          bookAuthor,
+          catalog: data.map(({ title, index }) => ({ title, index }))
+        });
 
         getContent(chapterIndex, true, chapterPos);
         window.addEventListener("keyup", handleKeyPress);
@@ -655,6 +714,7 @@ onMounted(() => {
         document.title = bookName + " | " + catalog.value[chapterIndex].title;
       },
       (err) => {
+        WEB.statusBarLoadFailed();
         showMessage({ message: "获取书籍目录失败", type: "error" });
         throw err;
       }
@@ -667,6 +727,10 @@ onUnmounted(() => {
   clearInterval(saveRBPToAppId);
   window.removeEventListener("keyup", handleKeyPress);
   window.removeEventListener("resize", onResize);
+  window.removeEventListener("message", handleExtensionMessage);
+  window.removeEventListener("focus", WEB.hideStatusBarContent);
+  window.removeEventListener("pointerdown", WEB.hideStatusBarContent);
+  WEB.hideStatusBarContent();
   // 兼容Safari < 14
   document.removeEventListener("visibilitychange", onVisibilityChange);
   readSettingsVisible.value = false;
